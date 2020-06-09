@@ -1,5 +1,22 @@
 import random, shutil, datetime, math
 
+################# Files and global functions for ball by ball commentary###################
+comm_file = "scorecards/commentary_file.txt"
+open(comm_file, "w")
+
+
+def commentary(comment):
+	with open (comm_file, 'a') as f:
+		f.write(comment)
+
+#FURTHER TO DO:
+#  1. For now commentary file can be generated for only one match at a time. Will need to
+#	  enable some batch processing method just like the scorecards
+#  2. Could attempt further details in commentary lines, But that could ve a overkill
+############################################################################################
+
+
+
 def twodp (x):
 	return "%.2f" % round(x,2)
 
@@ -119,9 +136,6 @@ def oversballs (x):
 
 
 
-
-
-
 class teaminnings:
 	def __init__(self, t):
 		self.test = t
@@ -139,11 +153,15 @@ class teaminnings:
 		self.fatigue = []
 		self.extras = [0,0,0,0,0]
 
+			
+
+
 	def inningsheader (self):
 		if len(self.test.teaminnings) > 2: self.number = '2nd'
 		else: self.number = '1st'
 
 		y = (' {} - {} innings'.format(self.team.name, self.number))
+
 
 		if self.test.odi == True: y = ' {}'.format(self.team.name)
 
@@ -152,6 +170,8 @@ class teaminnings:
 		if len(self.test.teaminnings) == 3 and self.test.teaminnings[1].team == self.team: y = y + ' (following on)'
 		if len(self.test.teaminnings) == 4: y = y + ' (Target: {} in {} overs)'.format(self.target()+self.runs, self.test.remaining() + self.overs)
 		self.test.score (y)
+
+	
 
 	def run (self):
 		self.active = True
@@ -172,6 +192,7 @@ class teaminnings:
 
 		self.allout()
 
+
 	def runsadd (self, n):
 		self.runs = self.runs + n
 		self.onstrike.innings.runs = self.onstrike.innings.runs + n
@@ -185,6 +206,7 @@ class teaminnings:
 		self.milestone(n)
 		self.partnership(n)
 		self.swap(n)
+
 
 	def pitchfactor (self):
 		if 'Spin' in self.bowler.tag: return self.test.pitch[1]
@@ -232,10 +254,24 @@ class teaminnings:
 		if change == True: c = [x for x in self.bowlteam.xi if x is not self.bowler and x is not self.otherbowler and x is not self.bowlteam.wk]
 		else:  c = [x for x in self.bowlteam.xi if x is not self.otherbowler and x is not self.bowlteam.wk]
 		c.sort(key = lambda x: self.bowlvalue(x), reverse = False)
+
+		
+
 		if self.test.bowlingchanges == True and a is not c[0]: 
-			if change == True: self.test.logger('Bowling change: {} ({} over spell) replaced by {}'.format(a.name, a.bowling.spell, c[0].name))
-			else: self.test.logger('Bowling change: {} replaced by {}'.format(a.name, c[0].name))
+			if change == True: 
+							self.test.logger('Bowling change: {} ({} over spell) replaced by {}'.format(a.name, a.bowling.spell, c[0].name))
+							
+							##### Ball by Ball Commentary ######
+							COMM_bowlingchange = f"...Bowling Change: {a.name} ({a.bowling.spell} over spell) replaced by {c[0].name}\n\n"
+							commentary(COMM_bowlingchange)
+
+			else: 
+				self.test.logger('Bowling change: {} replaced by {}'.format(a.name, c[0].name))
 		return c[0]
+		
+		
+
+
 
 	def bowlvalue (self, p):
 		o = self.overs % 80
@@ -383,6 +419,10 @@ class teaminnings:
 			if self.wickets != 10: x = ' - new batsman {}'.format(self.team.xi[self.wickets+1].name)
 			else: x = ''
 			self.test.logger('{} {} {} ({}b) {}x4 {}x6 - partnership {} {}'.format(self.onstrike.name, self.onstrike.innings.dismissal, self.onstrike.innings.runs, self.onstrike.innings.balls, self.onstrike.innings.fours, self.onstrike.innings.sixes, self.partnership(0), x))
+			
+			##### Ball by Ball Commentary ######
+			self.COMM_wicket = 'OUT - {} {} ({}b) {}x4 {}x6 - partnership {} {}'.format(self.onstrike.innings.dismissal, self.onstrike.innings.runs, self.onstrike.innings.balls, self.onstrike.innings.fours, self.onstrike.innings.sixes, self.partnership(0), x)
+		
 		if self.bowler.bowling.wickets >= 5 and 'run out' not in self.onstrike.innings.dismissal:
 			self.test.logger('{} {}'.format(self.bowler.name, self.bowler.bowling.bowlformat()))
 
@@ -475,14 +515,16 @@ class teaminnings:
 				return True
 
 	def ball (self):
+		#if match_start: self.first_session()
 		a = self.onstrike
 		b = self.bowler
 		extra = ''
+		COMM_ball_outcome = ''
+		COMM_no_ball = ''
 
 		z = self.rate()
 		y = self.wicketrate()
 
-		#print (a.name, b.name, round (self.onstrike.bat), round (self.bowler.bowl), round(z,3), round(y, 3), self.aggfactor())
 
 		four = 0.06*z
 		six = 0.003*z
@@ -496,7 +538,13 @@ class teaminnings:
 
 		if random.random() < 0.027:
 			dead = self.extracheck()
-			if dead == True: return
+			if dead == True:  
+					###### Ball by Ball Commentary ######
+					COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {self.overlog[-1]}\n"
+					commentary(COMM_ball_by_ball)
+					return
+			else:
+				COMM_no_ball = 'No ball'
 
 		if y < x < 3*y: 
 			#self.overlog.append('!')
@@ -507,23 +555,56 @@ class teaminnings:
 				self.test.logger('{} dropped by {} off {} on {}*'.format(self.onstrike.name, q.name, self.bowler.name, self.onstrike.innings.runs))
 				self.onstrike.innings.drops.append([q, self.bowler, self.onstrike.innings.runs])
 
+				###### Ball by Ball Commentary ######
+				COMM_ball_outcome = '{} dropped by {} off {} on {}*'.format(self.onstrike.name, q.name, self.bowler.name, self.onstrike.innings.runs)
+
 		if x < y: 
 			i = self.wicket()
 			self.overlog.append('W')
 			if len(self.overlog) >= 5 and len(self.overlog[-2]) > 3 and self.overlog[-3] == 'W' and len(self.overlog[-4]) > 3 and self.overlog[-5] == 'W': self.test.logger('Hattrick for {}!'.format(self.bowler.name))
 			self.overlog.append(self.onstrike.name)
+			COMM_ball_outcome = self.COMM_wicket  ###### Ball by Ball Commentary ######
+			
 
-		elif x > 1 - six: self.runsadd(6)
-		elif x > 1 - six - four: self.runsadd(4)
+		elif x > 1 - six: 
+			self.runsadd(6)
+			COMM_ball_outcome = 'SIX!'  ###### Ball by Ball Commentary ######
+		elif x > 1 - six - four: 
+			self.runsadd(4)
+			COMM_ball_outcome = 'FOUR!'  ###### Ball by Ball Commentary ######
 		elif x > 1 - six - four - z:
 			c = random.random()
-			if c < 0.4: self.runsadd(1)
-			elif c < 0.49: self.runsadd(2)
-			elif c < 0.512: self.runsadd(3)
-			else: self.overlog.append('.')
-		else: self.overlog.append('.')
+			if c < 0.4: 
+				self.runsadd(1)
+				COMM_ball_outcome = '1 run'   ###### Ball by Ball Commentary ######
+			elif c < 0.49: 
+				self.runsadd(2)
+				COMM_ball_outcome = '2 runs'	###### Ball by Ball Commentary ######
+			elif c < 0.512: 
+				self.runsadd(3)
+				COMM_ball_outcome = '3 runs'	###### Ball by Ball Commentary ######
+			else: 
+				self.overlog.append('.')
+				COMM_ball_outcome = 'No run'	###### Ball by Ball Commentary ######
+		else: 
+			self.overlog.append('.')
+			COMM_ball_outcome = 'No run'	###### Ball by Ball Commentary ######
+
+
+
+		###### Ball by Ball Commentary ######
+		if COMM_no_ball == "No ball" and COMM_ball_outcome == "No run":
+			COMM_ball_outcome = COMM_no_ball
+		elif COMM_no_ball == "No ball" and COMM_ball_outcome != "No run":
+			COMM_ball_outcome = "No ball plus " + COMM_ball_outcome
+		COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {COMM_ball_outcome}\n"
+		commentary(COMM_ball_by_ball)
+
+
 
 	def over (self):
+		COMM_day_break = ''
+
 		if self.test.overcount() % 90 == 0 and self.test.odi == False:
 			for i in self.order: i.spell = 0 
 			self.fatigue = []
@@ -545,6 +626,7 @@ class teaminnings:
 				self.active = False
 				self.result()
 				break
+
 			self.ball()
 			self.result()
 			
@@ -560,6 +642,29 @@ class teaminnings:
 			self.bowler.bowling.spell += 1
 			self.bowler.bowling.balls = 0
 
+
+			###### Ball by Ball Commentary ######
+			
+			n = self.test.teaminnings[-1].lead()
+			if len(self.test.teaminnings) == 1: COMM_score_in_context = ''
+			elif len(self.test.teaminnings) in [2,3]:
+				if n > 0: COMM_score_in_context = f"(lead by {n})"
+				elif n == 0: COMM_score_in_context = f"(scores level)"
+				else: COMM_score_in_context = f"(trail by {-n})"
+			else: 
+				COMM_score_in_context = '(target {})'.format(self.test.teaminnings[3].target()+self.test.teaminnings[3].runs)
+			
+
+			if self.test.overcount() % 90 == 30: COMM_day_break = '...LUNCH on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 2nd Session--\n\n'	
+			if self.test.overcount() % 90 == 60: COMM_day_break = '...TEA on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 3rd Session--\n\n'	
+			COMM_runs_in_over = self.runs - x 
+			COMM_wickets_in_over = self.overlog.count("W")
+			COMM_end_of_over = f"\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score now: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b)\n\n{COMM_day_break}"
+			commentary(COMM_end_of_over)
+
+			##########################################
+
+
 		if self.runs - x > 12:
 			y = ''
 			for i in self.overlog: 
@@ -571,6 +676,7 @@ class teaminnings:
 		if self.wickets < 10 and self.active == True: 
 			self.swap(1)
 			self.bowler, self.otherbowler = self.otherbowler, self.bowler
+
 
 	def day (self):
 		if self.test.odi == True: return 1
@@ -587,10 +693,31 @@ class teaminnings:
 			elif z == 60:
 				self.test.logger('Tea: ' + a)
 
+
 		x = 'Day {}'.format(y)
 		if y > self.test.daytracker:
 			if y > 1:
-				self.test.logger('Close of play: ' + a) 
+				self.test.logger('Close of play: ' + a + '\n' + '\n' + '\n————————————————————————————————————————————————————————————————————————————————————————————-')
+				
+				###### Ball by Ball Commentary ######
+				n = self.test.teaminnings[-1].lead()
+				if len(self.test.teaminnings) == 1: COMM_score_in_context = ''
+				elif len(self.test.teaminnings) in [2,3]:
+					if n > 0: COMM_score_in_context = f"(lead by {n})"
+					elif n == 0: COMM_score_in_context = f"(scores level)"
+					else: COMM_score_in_context = f"(trail by {-n})"
+				else: 
+					COMM_score_in_context = '(target {})'.format(self.test.teaminnings[3].target()+self.test.teaminnings[3].runs)
+
+				COMM_end_of_day = f"...End of Day {y-1} - {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n\n\n\n--{x}, 1st Session--\n\n"
+				commentary(COMM_end_of_day)
+
+				#######################################
+
+
+				self.scoresheet()
+				
+
 			self.test.logger(x)
 			self.test.daytracker = y
 		return y
@@ -653,6 +780,40 @@ class teaminnings:
 			return False
 
 	def allout (self):
+		a = '{} {}* ({}b), {} {}* ({}b)'.format(self.batsmen[0].name, self.batsmen[0].innings.runs, self.batsmen[0].innings.balls, self.batsmen[1].name, self.batsmen[1].innings.runs, self.batsmen[1].innings.balls)
+
+		if len(self.test.teaminnings) < 4 or self.test.win != '':
+			self.test.tobat = self.followon()
+			q,w = '',''
+			if self.batsmen[0].innings.out == False: q = "*"
+			if self.batsmen[1].innings.out == False: w = "*"
+			#self.test.logger('End of innings - {} {}{} ({}b), {} {}{} ({}b).\n \n \n————————————————————————————————————————————————————————————————————————————————————————————-'.format(self.batsmen[0].name, self.batsmen[0].innings.runs, q, self.batsmen[0].innings.balls, self.batsmen[1].name, self.batsmen[1].innings.runs, w, self.batsmen[1].innings.balls))
+			self.test.logger('End of Innings: ' + a + '\n' + '\n' + '\n————————————————————————————————————————————————————————————————————————————————————————————-')
+				
+			###### Ball by Ball Commentary ######
+			n = self.test.teaminnings[-1].lead()
+			if len(self.test.teaminnings) == 1: COMM_score_in_context = ''
+			elif len(self.test.teaminnings) in [2,3]:
+				if n > 0: COMM_score_in_context = f"(lead by {n})"
+				elif n == 0: COMM_score_in_context = f"(scores level)"
+				else: COMM_score_in_context = f"(trail by {-n})"
+			else: 
+				COMM_score_in_context = '(target {})'.format(self.test.teaminnings[3].target()+self.test.teaminnings[3].runs)
+
+
+			COMM_end_of_innings = f"\n...End of innings - {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n\n\n"
+			commentary(COMM_end_of_innings)
+
+			########################################
+
+
+		self.scoresheet()
+		
+		self.changeofinning()
+
+
+
+	def scoresheet (self):
 		if self.balls == 6:
 			self.balls = 0
 			self.overs += 1
@@ -661,13 +822,13 @@ class teaminnings:
 			self.bowler.bowling.overs += 1
 		self.bowler.overcount()
 
+
 		if len(self.test.teaminnings) < 4 or self.test.win != '':
 			q,w = '',''
 			if self.batsmen[0].innings.out == False: q = "*"
 			if self.batsmen[1].innings.out == False: w = "*"
-			self.test.logger('End of innings - {} {}{} ({}b), {} {}{} ({}b).'.format(self.batsmen[0].name, self.batsmen[0].innings.runs, q, self.batsmen[0].innings.balls, self.batsmen[1].name, self.batsmen[1].innings.runs, w, self.batsmen[1].innings.balls))
 
-		self.test.tobat = self.followon()
+		#self.test.tobat = self.followon()
 		self.test.logprint()
 		self.inningsheader()
 
@@ -728,8 +889,6 @@ class teaminnings:
 		self.test.score (y.rjust(89))
 
 		b = [x.name for x in self.innings if x.balls == 0]
-		if len (b) > 0:
-			self.test.score(' Did not bat: {}'.format(listshow(b)))
 
 		self.test.score( '{}{}{}{}{}'.format(''.ljust(21),'O'.center(6), 'M'.center(7), 'R'.center(5), 'W'.center(5)))
 		for i in self.order:
@@ -747,18 +906,49 @@ class teaminnings:
 				y = ' {} {} - {} - {} - {}   {} RPO {} {} {}'.format(i.name.ljust(20), oversballs(i).center(4), str(i.maidens).rjust(2), str(i.runs).rjust(3), str(i.wickets).rjust(2), str(e), i.player.tag.center(15), ''.ljust(28),i.player.bowldesc(self.test.year))
 			else:
 				y = ' {} {} - {} - {} - {}   {} RPO {}'.format(i.name.ljust(20), oversballs(i).center(4), str(i.maidens).rjust(2), str(i.runs).rjust(3), str(i.wickets).rjust(2), str(e), i.player.tag.center(15))
-			self.test.score (y)
+			self.test.score (y)		
+		
+		self.test.decorator()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+		self.test.blank()
+
 
 	def followon (self):
 		if self.test.odi == True: return self.bowlteam
 
 		if len(self.test.teaminnings) == 2 and self.lead() <= -200 and self.wickets == 10:
 			if (self.test.weather == 'Timeless' and self.lead() <= -300) or -(self.lead())  > self.test.remaining()-self.test.lostovers + self.overs*0.5:
-				self.test.logger('{} chose to enforce the follow-on.'.format(self.bowlteam.gamecapt.name))
+				self.test.logger('{} chose to enforce the follow-on.\n\n'.format(self.bowlteam.gamecapt.name))
 				return self.team
 			else:
-				self.test.logger('{} declined to enforce the follow-on.'.format(self.bowlteam.gamecapt.name))
+				self.test.logger('{} declined to enforce the follow-on.\n\n'.format(self.bowlteam.gamecapt.name))
 		return self.bowlteam
+
+	
+	def changeofinning (self):
+		#y = self.test.teaminnings[-1]
+		y = self.followon()
+		if len(self.test.teaminnings) >= 2: inn_number = '2nd'
+		else: inn_number = '1st'
+		 
+		with open (self.test.scorecard, 'a') as f:
+			if len(self.test.teaminnings) < 4 and self.test.win == '':
+				#x = 'Change of innings'
+				x = '{} - {} innings'.format(y.name, inn_number)
+				f.write(x)
+				commentary('\n' + x + '\n\n') ###### Ball by Ball Commentary ######
+			else:
+				 f.write("Post Match")
+		self.test.card.append('')
+
 
 	def target (self):
 		a = sum([x.runs for x in self.test.teaminnings if x.team == self.team])
@@ -807,6 +997,8 @@ class teaminnings:
 				else: b.append(scoreformat(x))
 			x = ' {} ({}) beat {} ({}) by {}'.format(self.test.win.name, listshow(a), [x for x in [self.test.home, self.test.away] if x is not self.test.win][0].name, listshow(b), self.test.margin)
 		self.test.score(x)
+		commentary('...In summary, ' + x)  ###### Ball by Ball Commentary ######
+
 		self.test.resultdesc = x
 		if self.test.win in ['Draw', 'Tie']: self.test.winname = self.test.win
 		else: self.test.winname = self.test.win.name
@@ -825,6 +1017,12 @@ class teaminnings:
 				if j.player == self.test.motm and ((j.balls > 0) or (j.overs > 0)): x.append('{}-{}'.format(j.wickets, j.runs))			
 
 		self.test.score(' Man of the Match: {} ({}) ({})'.format(self.test.motm.name, self.test.motm.team,listshow(x)))
+
+		###### Ball by Ball Commentary ######
+		COMM_motm = '. {} ({}) was the Man of the Match for ({}).\n...End of the file. Created from modified version of CricketPy by Jamee.\n'.format(self.test.motm.name, self.test.motm.team,listshow(x))
+		commentary(COMM_motm)
+
+
 		if self.test.lostovers > 0:
 			self.test.score(' {} overs lost to bad weather.'.format(self.test.lostovers))
 		self.test.score(self.test.pitchdetails())
@@ -854,6 +1052,8 @@ class teaminnings:
 		self.active = False
 
 		self.test.margin = self.margin()
+
+
 
 	def result (self):
 		a = sum([x.runs for x in self.test.teaminnings if x.team == self.team])
@@ -929,6 +1129,7 @@ class teaminnings:
 	innings = ''
 	order = ''
 	fatigue = ''
+
 
 class test:
 	def __init__(self):
@@ -1068,6 +1269,9 @@ class test:
 
 	def toss (self):
 		if self.tosswin == '': self.tosswin = random.choice([self.home, self.away])
+		self.pitchdetails()
+		y = 'Pitch Report: Pace Factor of {}, Spin Factor of {} and Outfield Speed of {}\n(The avergae number is 1. The greater the value, the easier it is for the batsmen)\n'.format("{:0.2f}".format(self.pitch[0]), "{:0.2f}".format(self.pitch[1]),"{:0.2f}".format(self.pitch[2])) 
+		self.score(y)
 		x = '{} has won the toss.'.format(self.tosswin.name)
 		self.score(x)
 		self.decision()
@@ -1185,6 +1389,14 @@ class test:
 			f.write('\n')
 		self.card.append('')
 
+
+	def decorator (self):
+		with open (self.scorecard, 'a') as f:
+			f.write('————————————————————————————————————————————————————————————————————————————————————————————-')
+		self.card.append('')	
+
+
+
 	def cardkeep (self, x, end = '\n'):
 		with open (self.scorecard, 'a') as f:
 			f.write(x)
@@ -1220,7 +1432,14 @@ class test:
 					d[-1] = d[-1][:-2]
 					d.append('\n')
 			else:
-				y, d = '{} v. {} at {}'.format(self.home.name, self.away.name, self.venue), []
+				y = '{} v. {} at {} \n'.format(self.raw[1],self.raw[2],self.raw[3])
+				#c.insert(0,y)
+				if len (self.series.results) > 0: d = ['\nSeries:\n']
+				else: d = []
+				for t in self.series.results:
+					if t.win in ['Draw', 'Tie']: z = t.win
+					else: z = t.win.name + ' won by ' + t.margin
+					d.append('Test # {}, {}, {}, {}\n'.format(t.no, t.venue, t.dates, z))
 
 			e1 = '{}: {}'.format(self.home.name, showteam(self.home))
 			e2 = '{}: {}'.format(self.away.name, showteam(self.away))
@@ -1231,6 +1450,25 @@ class test:
 			shutil.copy('scorecard.txt','{}/scorecard{}.txt'.format(self.folder, self.no))
 		finally:
 			f.close()
+
+
+		###### Ball by Ball Commentary ######
+		y = self.teaminnings[0]
+
+		if self.tosswin.name == y.team.name: toss_decision = self.tosswin.name + " will bat first."
+		else: toss_decision = self.tosswin.name + " will bowl first."
+
+		commentary_header = '{} v. {} at {} \n\n{}: {}\n{}: {}\n\n{} has won the toss, and {}\n\n\n--Day 1, 1st Session--\n{} - 1st Inning\n\n'.format(self.raw[1],self.raw[2],self.raw[3], self.home.name, showteam(self.home), self.away.name, showteam(self.away), self.tosswin.gamecapt.name, toss_decision, y.team.name)
+		f = open (comm_file, "r")
+		old_content = f.read()
+		f.close()
+		f = open (comm_file, "w")
+		new_content = commentary_header + old_content
+		f.write(new_content)
+		f.close()
+
+		######################################
+
 
 	def gamedesc (self):
 		#print ((self.home.name, 'v.', self.away.name).ljust(35), 'at', self.venue.ljust(15), "| Test #", str(self.no).ljust(4),'|', self.dates, '|', y, '| MOTM:', self.motm.name)
@@ -1405,7 +1643,7 @@ class test:
 	scorecard = 'scorecard.txt'
 	card = []
 	fullcard = False
-	saveallcards = False
+	saveallcards = True
 	bowlingchanges = False
 	log = []
 	teaminnings = []
