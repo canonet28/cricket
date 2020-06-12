@@ -1,9 +1,9 @@
 import random, shutil, datetime, math
 
 ################# Files and global functions for ball by ball commentary###################
+not_first_run = ''
 comm_file = "scorecards/commentary_file.txt"
 open(comm_file, "w")
-
 
 def commentary(comment):
 	with open (comm_file, 'a') as f:
@@ -12,9 +12,35 @@ def commentary(comment):
 #FURTHER TO DO:
 #  1. For now commentary file can be generated for only one match at a time. Will need to
 #	  enable some batch processing method just like the scorecards
-#  2. Could attempt further details in commentary lines, But that could be an overkill
-#  3. Match viewer/visualizations based on output.
+#  2. Could attempt further details in commentary lines, But that could ve a overkill
+#  3. Match viewer and visualizations based on output.
+
+
+
+######################## Alternate Ball by Ball Commentary ##################################
+alt_comm_file = "scorecards/alt_commentary_file.html"
+alt_file = open(alt_comm_file, "w")
+alt_file.write("<html><p align='center'><table width='70%' style = 'font-family: courier new, monaco, courier,arial;'>")
+alt_file.close()
+
+
+def alt_commentary(alt_comment, batsman0, batsman1):
+	global not_first_run
+	with open (alt_comm_file, 'a') as f:
+		if not_first_run != True:
+			first_alt_comment = "<tr><td style = 'border:1px dotted black;' width='8%'>Time</td><td style = 'border:1px dotted black;' width='17%'>Bowler</td><td style = 'border:1px dotted black;' width='20%'>Batsman</td><td style = 'border:1px dotted black;' width='5%'>Rns</td><td style = 'border:1px dotted black;' width='5%'>Bls</td><td style = 'border:1px dotted black;' width='20%'>Batsman</td><td style = 'border:1px dotted black;'  width='5%'>Rns</td><td style = 'border:1px dotted black;' width='5%'>Bls</td><td style = 'border:1px dotted black;' width='5%'>Overs</td><td style = 'border:1px dotted black;' width='5%'>Tot</td><td style = 'border:1px dotted black;' width='5%'>Wk</td></tr><tr><td style = 'border:1px dotted black;' colspan = '2'></td><td style = 'border:1px dotted black;' width='20%'>"  + batsman0 + "</td><td style = 'border:1px dotted black;' colspan = '2'></td><td style = 'border:1px dotted black;' width='20%'>" + batsman1 +  "</td><td style = 'border:1px dotted black;' colspan = '5'></td></tr>" + alt_comment
+
+			f.write(first_alt_comment)
+			not_first_run = True
+		else:	
+			f.write(alt_comment)
+
+#FURTHER TO DO:
+#  1. Sort out the code to handle overs with multipl wickets falling on it. Currently the 
+#     code breaks as it can just handle the last out bastman only. Plan on creating a list
+#     for dismissed batsmen [self.dismissed_batsmen] and work from there. 		
 ############################################################################################
+
 
 
 
@@ -153,7 +179,12 @@ class teaminnings:
 		self.otherbowler = self.bowlers[1]
 		self.fatigue = []
 		self.extras = [0,0,0,0,0]
-
+		######### Alternate Ball by Ball Commentary ######
+		self.over_details = ''   
+		self.lastbatsman = ''    
+		self.lastindex = ''      
+		self.default_alt_commentary = '' 
+		self.dismissed_batsmen = []
 			
 
 
@@ -263,8 +294,13 @@ class teaminnings:
 							self.test.logger('Bowling change: {} ({} over spell) replaced by {}'.format(a.name, a.bowling.spell, c[0].name))
 							
 							##### Ball by Ball Commentary ######
-							COMM_bowlingchange = f"...Bowling Change: {a.name} ({a.bowling.spell} over spell) replaced by {c[0].name}\n\n"
+							COMM_bowlingchange = f"...Bowling Change: {a.name} ({a.bowling.wickets}/{a.bowling.runs}) replaced by {c[0].name} ({c[0].bowling.wickets}/{c[0].bowling.runs})\n\n"
 							commentary(COMM_bowlingchange)
+
+							##### Alternate Ball by Ball Commentary ######
+							ALTCOMM_bowlingchange = f"<tr><td colspan='11'>&emsp;Bowling Change: {a.name} ({a.bowling.wickets}/{a.bowling.runs}) replaced by {c[0].name} ({c[0].bowling.wickets}/{c[0].bowling.runs})</td></tr>"
+							alt_commentary(ALTCOMM_bowlingchange, self.batsmen[0].name, self.batsmen[1].name)
+
 
 			else: 
 				self.test.logger('Bowling change: {} replaced by {}'.format(a.name, c[0].name))
@@ -417,8 +453,12 @@ class teaminnings:
 			self.bowler.bowling.wickets += 1
 
 		if self.partnership(0) >= 0:
-			if self.wickets != 10: x = ' - new batsman {}'.format(self.team.xi[self.wickets+1].name)
-			else: x = ''
+			if self.wickets != 10: 
+				x = ' - new batsman {}'.format(self.team.xi[self.wickets+1].name)
+				self.ALTCOMM_newbatsman = 'New batsman is {}'.format(self.team.xi[self.wickets+1].name)  ######### Alternate Ball by Ball Commentary ######
+			else: 
+				x = ''
+				self.ALTCOMM_newbatsman = ''  ######### Alternate Ball by Ball Commentary ######
 			self.test.logger('{} {} {} ({}b) {}x4 {}x6 - partnership {} {}'.format(self.onstrike.name, self.onstrike.innings.dismissal, self.onstrike.innings.runs, self.onstrike.innings.balls, self.onstrike.innings.fours, self.onstrike.innings.sixes, self.partnership(0), x))
 			
 			##### Ball by Ball Commentary ######
@@ -428,11 +468,25 @@ class teaminnings:
 			self.test.logger('{} {}'.format(self.bowler.name, self.bowler.bowling.bowlformat()))
 
 		self.onstrike.innings.FOW = [self.onstrike, self.runs,self.wickets]
+		
+
+		######### Alternate Ball by Ball Commentary ######
+		## Old Method: new batsman was added to the end of the list.  
+		## NEW METHOD replaces the out batsman with the new one in position.
 		if self.wickets < 10:
+			self.dismissed_batsmen.append(self.onstrike)
+			self.lastbatsman = self.onstrike.name
+			self.lastbatsman_dismissal = self.onstrike.innings.dismissal
+			self.lastbatsman_runs = self.onstrike.innings.runs
+			self.lastbatsman_balls = self.onstrike.innings.balls
+			self.lastbatsman_totalovers = self.overs
+			self.lastbatsman_totalballs = self.balls
+			self.lastindex = self.batsmen.index(self.onstrike)
+			self.batsmen.insert(self.lastindex, self.team.xi[self.wickets+1])
 			self.batsmen.remove(self.onstrike)
-			self.batsmen.append(self.team.xi[self.wickets+1])
-			self.onstrike = self.batsmen[-1]
+			self.onstrike = self.team.xi[self.wickets+1]
 			self.declaration()
+
 
 	def extracheck (self):
 		e = random.random()
@@ -448,9 +502,9 @@ class teaminnings:
 			elif e < 0.4:
 				self.runs +=1
 				self.extras[0] += 1
-				self.swap(1)
 				self.partnership(1)
 				self.overlog.append('b')
+				self.swap(1)
 				return True
 
 		elif e < 0.632: 
@@ -471,9 +525,9 @@ class teaminnings:
 			elif e < 193/350:
 				self.runs += 1
 				self.extras[1] +=1
-				self.swap(1)
 				self.partnership(1)
 				self.overlog.append('lb')
+				self.swap(1)
 				return True
 
 		elif e < 0.697: 
@@ -522,6 +576,7 @@ class teaminnings:
 		extra = ''
 		COMM_ball_outcome = ''
 		COMM_no_ball = ''
+		self.swap_check = False  ######### Alternate Ball by Ball Commentary ######
 
 		z = self.rate()
 		y = self.wicketrate()
@@ -541,7 +596,10 @@ class teaminnings:
 			dead = self.extracheck()
 			if dead == True:  
 					###### Ball by Ball Commentary ######
-					COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {self.overlog[-1]}\n"
+					if self.swap_check:
+						COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {self.overlog[-2]}\n"
+					else:	
+						COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {self.overlog[-1]}\n"
 					commentary(COMM_ball_by_ball)
 					return
 			else:
@@ -603,8 +661,12 @@ class teaminnings:
 
 
 
+
+
 	def over (self):
 		COMM_day_break = ''
+		ALTCOMM_day_break = ''
+		self.incomplete_lastover = ''
 
 		if self.test.overcount() % 90 == 0 and self.test.odi == False:
 			for i in self.order: i.spell = 0 
@@ -637,11 +699,15 @@ class teaminnings:
 			self.bowler.bowling.maidens += 1
 			self.bowler.maidens += 1
 
-		if self.balls == 6: 
-			self.overs, self.balls = self.overs+1, 0
-			self.bowler.bowling.overs +=1
-			self.bowler.bowling.spell += 1
-			self.bowler.bowling.balls = 0
+
+		if (self.balls < 6 and self.wickets == 10) or (self.balls < 6 and self.active == False): self.incomplete_lastover = True  ## Building to check the overlog from incomplete last overs 
+
+		if (self.balls == 6) or self.incomplete_lastover:
+			if self.balls == 6:
+				self.overs, self.balls = self.overs+1, 0
+				self.bowler.bowling.overs +=1
+				self.bowler.bowling.spell += 1
+				self.bowler.bowling.balls = 0
 
 
 			###### Ball by Ball Commentary ######
@@ -656,14 +722,126 @@ class teaminnings:
 				COMM_score_in_context = '(target {})'.format(self.test.teaminnings[3].target()+self.test.teaminnings[3].runs)
 			
 
-			if self.test.overcount() % 90 == 30: COMM_day_break = '...LUNCH on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 2nd Session--\n\n'	
-			if self.test.overcount() % 90 == 60: COMM_day_break = '...TEA on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 3rd Session--\n\n'	
+			if self.test.overcount() % 90 == 30: 
+				COMM_day_break = '...LUNCH on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 2nd Session--\n\n'	
+				ALTCOMM_day_break = '<tr><td colspan = "11"><br>LUNCH on Day ' + str(self.day()) +'<br><br>--Day ' + str(self.day()) + ', 2nd Session--</td></tr>'+ self.default_alt_commentary_header  ###### Alternate Ball by Ball Commentary #####
+			if self.test.overcount() % 90 == 60: 
+				ALTCOMM_day_break = '<tr><td colspan = "11"><br>TEA on Day ' + str(self.day()) +'<br><br>--Day ' + str(self.day()) + ', 3rd Session--</td></tr>' + self.default_alt_commentary_header	###### Alternate Ball by Ball Commentary #####
+			
 			COMM_runs_in_over = self.runs - x 
 			COMM_wickets_in_over = self.overlog.count("W")
-			COMM_end_of_over = f"\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). Partnership {self.partnership(0)}.\n\n{COMM_day_break}"
+			COMM_end_of_over = f"\n...{self.overlog[0:]}\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). Partnership {self.partnership(0)}.\n\n{COMM_day_break}"
 			commentary(COMM_end_of_over)
 
 			##########################################
+
+
+
+
+
+
+			################################## Alternate Ball by Ball Commentary : CORE SCRIPTS ##################################
+			
+
+			global on_strike, non_strike, batsman0_balls, batsman1_balls
+			batsman0_balls = ''
+			batsman1_balls = ''
+			overlog_detail_count = 0
+
+
+			## Frequently used table stuctures (FUTS)
+
+			self.default_alt_commentary_header = f"<tr><td style = 'border:0.5px dotted black;' width='8%'>Time</td><td style = 'border:0.5px dotted black;' width='17%'>Bowler</td><td style = 'border:0.5px dotted black;' width='20%'>Batsman</td><td style = 'border:0.5px dotted black;' width='5%'>Rns</td><td style = 'border:0.5px dotted black;' width='5%'>Bls</td><td style = 'border:0.5px dotted black;' width='20%'>Batsman</td><td style = 'border:0.5px dotted black;' width='5%'>Rns</td><td style = 'border:0.5px dotted black;' width='5%'>Bls</td><td style = 'border:0.5px dotted black;' width='5%'>Overs</td><td style = 'border:0.5px dotted black;' width='5%'>Tot</td><td style = 'border:0.5px dotted black;' width='5%'>Wk</td></tr>"
+			
+			self.default_alt_commentary_batsmen = f"<tr><td style = 'border:0.5px dotted black;' width='8%' colspan = '2'></td><td style = 'border:0.5px dotted black;' width='20%'>{self.batsmen[0].name}</td><td style = 'border:0.5px dotted black;' width='5%' colspan = '2'></td><td style = 'border:0.5px dotted black;' width='20%'>{self.batsmen[1].name}</td><td style = 'border:0.5px dotted black;' colspan = '5'></td></tr>"
+
+
+			### End of frequent table structures
+			### DEBUG for Overlog like: ['BA Stokes', 'W', 'OJ Pope', '4', '.', '1', 'JE Root', '1', 'OJ Pope', 'W', 'BT Foakes']
+
+			for overlog_detail in self.overlog:
+				overlog_detail_count += 1
+				if overlog_detail == self.batsmen[0].name:
+					on_strike = 0	
+					non_strike = 1
+
+				elif overlog_detail == self.batsmen[1].name:
+					on_strike = 1
+					non_strike = 0
+
+				elif overlog_detail == self.lastbatsman:
+					if self.lastindex == 0:
+						on_strike = 0
+						self.batsmen[0].innings.runs = self.lastbatsman_runs
+						self.batsmen[0].innings.balls = self.lastbatsman_balls
+
+
+					else:
+						on_strike = 1	
+						self.batsmen[1].innings.runs = self.lastbatsman_runs
+						self.batsmen[1].innings.balls = self.lastbatsman_balls
+
+				else:
+					if on_strike == 0:
+						batsman0_balls += "&nbsp;" + overlog_detail
+						batsman1_balls += "&nbsp;&nbsp;"
+
+					if on_strike == 1:
+						batsman1_balls += "&nbsp;" + overlog_detail
+						batsman0_balls += "&nbsp;&nbsp;"
+
+					self.wicketball = False
+				
+					if overlog_detail == "W":
+						if self.wickets == 10: 
+							self.default_alt_commentary_batsmen = ''
+							self.lastbatsman_totalovers = self.overs
+							self.lastbatsman_totalballs = self.balls
+							self.lastbatsman = self.onstrike.name
+							self.lastbatsman_dismissal = self.onstrike.innings.dismissal
+							self.lastbatsman_runs = self.onstrike.innings.runs
+							self.lastbatsman_balls = self.onstrike.innings.balls
+
+						self.over_details = f"<tr><td style = 'border:1px dotted black;' width='8%'>{self.test.time()}</td><td style = 'border:1px dotted black;' width='17%'>{self.bowler.name}</td><td style = 'border:1px dotted black;' width='20%'>{batsman0_balls}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[0].innings.runs}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[0].innings.balls}</td><td style = 'border:1px dotted black;' width='20%'>{batsman1_balls}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[1].innings.runs}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[1].innings.balls}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.lastbatsman_totalovers)}.{str(self.lastbatsman_totalballs)}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.runs)}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.wickets)}</td></tr><tr><td colspan='11'></td></tr><tr><td colspan='11'>&emsp;OUT. {self.lastbatsman} {self.lastbatsman_dismissal} {self.lastbatsman_runs} ({self.lastbatsman_balls}b)<br>&emsp;Score now: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.ALTCOMM_newbatsman}</td></tr><tr><td colspan='11'></td></tr>{self.default_alt_commentary_batsmen}"
+
+						alt_commentary(self.over_details, self.batsmen[0].name, self.batsmen[1].name)
+
+						batsman0_balls = ''
+						batsman1_balls = ''
+						batsman0_balls = self.lastbatsman_totalballs * "&nbsp;&nbsp;"
+						batsman1_balls = self.lastbatsman_totalballs * "&nbsp;&nbsp;"
+						self.wicketball = True
+
+						if self.lastindex == 0:
+							on_strike = 0
+							self.batsmen[0].innings.runs = 0
+							self.batsmen[0].innings.balls = 0
+							
+
+						else:
+							on_strike = 1	
+							self.batsmen[1].innings.runs = 0
+							self.batsmen[1].innings.balls = 0
+			
+
+
+
+			#if overlog_detail_count == len(self.overlog):
+			if self.wickets < 10 and self.wicketball == False:
+				if ALTCOMM_day_break != '':
+					ALTCOMM_day_break = ALTCOMM_day_break + self.default_alt_commentary_batsmen
+			
+				self.over_details = f"<tr><td style = 'border:1px dotted black;' width='8%'>{self.test.time()}</td><td style = 'border:1px dotted black;' width='17%'>{self.bowler.name}</td><td style = 'border:1px dotted black;' width='20%'>{batsman0_balls}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[0].innings.runs}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[0].innings.balls}</td><td style = 'border:1px dotted black;' width='20%'>{batsman1_balls}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[1].innings.runs}</td><td style = 'border:1px dotted black;' width='5%'>{self.batsmen[1].innings.balls}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.overs)}.{str(self.balls)}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.runs)}</td><td style = 'border:1px dotted black;' width='5%'>{str(self.wickets)}</td></tr>{ALTCOMM_day_break}"
+
+				alt_commentary(self.over_details, self.batsmen[0].name, self.batsmen[1].name)
+			
+			####################################################################
+
+
+
+
+
+
 
 
 		if self.runs - x > 12:
@@ -716,6 +894,17 @@ class teaminnings:
 				#######################################
 
 
+
+				### Alternate Ball by Ball Commentary ####
+
+				ALTCOMM_end_of_day = f"<tr><td colspan='11'></td></tr><tr><td colspan='11'><br><br>END OF DAY { y-1}<br>{self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}*, {self.batsmen[1].name} {self.batsmen[1].innings.runs}*. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs}, {self.otherbowler.name} {self.otherbowler.bowling.wickets}/{self.otherbowler.bowling.runs}<br><br><br><br></td></tr><tr><td colspan='11'>--{x}, 1st Session--</td></tr>{self.default_alt_commentary_header}{self.default_alt_commentary_batsmen}"
+				alt_commentary(ALTCOMM_end_of_day, self.batsmen[0].name, self.batsmen[1].name)
+
+
+				##########################################
+
+
+
 				self.scoresheet()
 				
 
@@ -727,7 +916,9 @@ class teaminnings:
 		if n % 2 == 1:
 			if self.batsmen[0] == self.onstrike: self.onstrike = self.batsmen[1]
 			else: self.onstrike = self.batsmen[0]
-			if self.balls < 6: self.overlog.append(self.onstrike.name)
+			if self.balls < 6: 
+				self.overlog.append(self.onstrike.name)
+				self.swap_check = True  ######## Alternate Ball by Ball Commentary #########
 
 	def lead (self):
 		a = sum([x.runs for x in self.test.teaminnings if x.team == self.team])
@@ -802,10 +993,16 @@ class teaminnings:
 				COMM_score_in_context = '(target {})'.format(self.test.teaminnings[3].target()+self.test.teaminnings[3].runs)
 
 
-			COMM_end_of_innings = f"\n...End of innings - {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n\n\n"
+			COMM_end_of_innings = f"\n{self.overlog[0:]}\n...End of innings - {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n\n\n"
 			commentary(COMM_end_of_innings)
 
 			########################################
+
+
+
+			###### Alternate Ball by Ball Commentary ######
+			ALTCOMM_end_of_innings = f"<tr><td colspan='11'></td></tr><tr><td colspan='11'><br><br>END OF INNINGS<br>{self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})<br><br><br><br></td></tr><tr><td colspan='11'></td></tr>"
+			alt_commentary(ALTCOMM_end_of_innings, self.batsmen[0].name, self.batsmen[1].name)
 
 
 		self.scoresheet()
@@ -946,6 +1143,15 @@ class teaminnings:
 				x = '{} - {} innings'.format(y.name, inn_number)
 				f.write(x)
 				commentary('\n' + x + '\n\n') ###### Ball by Ball Commentary ######
+
+
+				###### Alternate Ball by Ball Commentary ######
+				self.batsmen = [y.xi[0],y.xi[1]]
+
+				ALTCOMM_end_of_innings = f"<tr><td colspan='11'>{x}</td></tr><tr><td colspan='11'></td></tr>{self.default_alt_commentary_header}<tr><td style = 'border:0.5px dotted black;' width='8%' colspan = '2'></td><td style = 'border:0.5px dotted black;' width='20%'>{self.batsmen[0].name}</td><td style = 'border:0.5px dotted black;' width='5%' colspan = '2'></td><td style = 'border:0.5px dotted black;' width='20%'>{self.batsmen[1].name}</td><td style = 'border:0.5px dotted black;' colspan = '5'></td></tr>"
+				alt_commentary(ALTCOMM_end_of_innings, self.batsmen[0].name, self.batsmen[1].name)	
+				#################################################
+
 			else:
 				 f.write("Post Match")
 		self.test.card.append('')
@@ -1000,6 +1206,9 @@ class teaminnings:
 		self.test.score(x)
 		commentary('...In summary, ' + x)  ###### Ball by Ball Commentary ######
 
+		ALTCOMM_result = x  ### Alternate Ball by Ball Commentary ####
+
+
 		self.test.resultdesc = x
 		if self.test.win in ['Draw', 'Tie']: self.test.winname = self.test.win
 		else: self.test.winname = self.test.win.name
@@ -1022,6 +1231,13 @@ class teaminnings:
 		###### Ball by Ball Commentary ######
 		COMM_motm = '. {} ({}) was the Man of the Match for ({}).\n...End of the file. Created from modified version of CricketPy by Jamee.\n'.format(self.test.motm.name, self.test.motm.team,listshow(x))
 		commentary(COMM_motm)
+		
+
+		### Alternate Ball by Ball Commentary ####
+		ALTCOMM_motm = 'Man of the Match: {} ({}) for ({})<br>End of the file. Created from modified version of CricketPy developed by Jamee.'.format(self.test.motm.name, self.test.motm.team,listshow(x))
+		ALTCOMM_summary = f"<tr><td colspan='11'>RESULT: {ALTCOMM_result}<br>{ALTCOMM_motm}</td></tr></table></html>"
+		alt_commentary(ALTCOMM_summary, a, b)
+
 
 
 		if self.test.lostovers > 0:
@@ -1031,7 +1247,7 @@ class teaminnings:
 		self.test.logprint()
 		self.test.matchreport()
 
-		#####ONLY SAVE SCORECARDS FROM THIS POINT ON ######
+		##### ONLY SAVE SCORECARDS FROM THIS POINT ON ######
 
 		if self.test.saveallcards == True: self.test.cardsave()
 
@@ -1467,6 +1683,18 @@ class test:
 		new_content = commentary_header + old_content
 		f.write(new_content)
 		f.close()
+
+
+		### Alternate Ball by Ball Commentary####
+		ALTCOMM_commentary_header = "<html><p align='center'><table width='80%' style = 'font-family: courier new, monaco, courier,arial;'><tr><td colspan='11'>{} v. {} at {} <br><br>{}: {}<br>{}: {}<br><br>{} has won the toss, and {}<br><br>--Day 1, 1st Session--<br>{} - 1st Inning</td></tr>".format(self.raw[1],self.raw[2],self.raw[3], self.home.name, showteam(self.home), self.away.name, showteam(self.away), self.tosswin.gamecapt.name, toss_decision, y.team.name)
+		f = open (alt_comm_file, "r")
+		ALTCOMM_old_content = f.read()
+		f.close()
+		f = open (alt_comm_file, "w")
+		ALTCOMM_new_content = ALTCOMM_commentary_header + ALTCOMM_old_content
+		f.write(ALTCOMM_new_content)
+		f.close()
+
 
 		######################################
 
