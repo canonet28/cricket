@@ -730,7 +730,7 @@ class teaminnings:
 			
 			COMM_runs_in_over = self.runs - x 
 			COMM_wickets_in_over = self.overlog.count("W")
-			COMM_end_of_over = f"\n...{self.overlog[0:]}\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). Partnership {self.partnership(0)}.\n\n{COMM_day_break}"
+			COMM_end_of_over = f"\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). Partnership {self.partnership(0)}.\n\n{COMM_day_break}"
 			commentary(COMM_end_of_over)
 
 			##########################################
