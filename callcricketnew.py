@@ -902,11 +902,13 @@ class teaminnings:
 				self.test.logger('Tea: ' + a)
 
 
+
 		x = 'Day {}'.format(y)
 		if y > self.test.daytracker:
 			if y > 1:
-				self.test.logger('Close of play: ' + a + '\n' + '\n' + '\n————————————————————————————————————————————————————————————————————————————————————————————-')
-				
+				#self.test.logger('Close of play: ' + a + '\n' + '\n' + '\n————————————————————————————————————————————————————————————————————————————————————————————-')
+				self.test.logger('Close of play: ' + a + '\n\n')
+
 				###### Ball by Ball Commentary ######
 				n = self.test.teaminnings[-1].lead()
 				if len(self.test.teaminnings) == 1: COMM_score_in_context = ''
@@ -934,7 +936,7 @@ class teaminnings:
 
 
 
-				self.scoresheet()
+				#self.scoresheet()
 				
 
 			self.test.logger(x)
@@ -1035,7 +1037,7 @@ class teaminnings:
 
 
 		self.scoresheet()
-		
+
 		self.changeofinning()
 
 
@@ -1136,12 +1138,6 @@ class teaminnings:
 			self.test.score (y)		
 		
 		self.test.decorator()
-		self.test.blank()
-		self.test.blank()
-		self.test.blank()
-		self.test.blank()
-		self.test.blank()
-		self.test.blank()
 		self.test.blank()
 		self.test.blank()
 		self.test.blank()
