@@ -1,4 +1,4 @@
-import random, shutil, datetime, math
+import random, shutil, datetime, math, os, fnmatch
 
 ################# Files and global functions for ball by ball commentary ###################
 not_first_run = ''
@@ -20,7 +20,6 @@ def commentary(comment):
 ######################## Alternate Ball by Ball Commentary ##################################
 alt_comm_file = "scorecards/alt_commentary_file.html"
 alt_file = open(alt_comm_file, "w")
-alt_file.write("<html><p align='center'><table width='70%' style = 'font-family: courier new, monaco, courier,arial;'>")
 alt_file.close()
 
 
@@ -33,7 +32,7 @@ def alt_commentary(alt_comment, batsman0, batsman1):
 			f.write(first_alt_comment)
 			not_first_run = True
 		else:	
-			f.write(alt_comment)
+			f.write(alt_comment)			
 	
 ############################################################################################
 
@@ -180,6 +179,7 @@ class teaminnings:
 		self.lastbatsman = ''    
 		self.lastindex = ''      
 		self.default_alt_commentary = '' 
+		self.default_alt_commentary_header = ''
 		self.dismissed_batsmen = []
 		self.dismissed_batsmen_names = []
 		self.dismissed_batsmen_index = []
@@ -205,6 +205,7 @@ class teaminnings:
 		if len(self.test.teaminnings) == 3 and self.test.teaminnings[1].team == self.team: y = y + ' (following on)'
 		if len(self.test.teaminnings) == 4: y = y + ' (Target: {} in {} overs)'.format(self.target()+self.runs, self.test.remaining() + self.overs)
 		self.test.score (y)
+		self.test.newscore (y + "\n")
 
 	
 
@@ -1011,7 +1012,7 @@ class teaminnings:
 			if self.batsmen[0].innings.out == False: q = "*"
 			if self.batsmen[1].innings.out == False: w = "*"
 			#self.test.logger('End of innings - {} {}{} ({}b), {} {}{} ({}b).\n \n \n————————————————————————————————————————————————————————————————————————————————————————————-'.format(self.batsmen[0].name, self.batsmen[0].innings.runs, q, self.batsmen[0].innings.balls, self.batsmen[1].name, self.batsmen[1].innings.runs, w, self.batsmen[1].innings.balls))
-			self.test.logger('End of Innings: ' + a + '\n' + '\n' + '\n————————————————————————————————————————————————————————————————————————————————————————————-')
+			self.test.logger('End of Innings: ' + a + '\n' + '\n' + '\n')
 				
 			###### Ball by Ball Commentary ######
 			n = self.test.teaminnings[-1].lead()
@@ -1032,7 +1033,7 @@ class teaminnings:
 
 
 			###### Alternate Ball by Ball Commentary ######
-			ALTCOMM_end_of_innings = f"<tr><td colspan='11'></td></tr><tr><td colspan='11'><br><br>END OF INNINGS<br>{self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})<br><br><br><br></td></tr><tr><td colspan='11'></td></tr>"
+			ALTCOMM_end_of_innings = f"<tr><td colspan='11'></td></tr><tr><td colspan='11'><br><br>END OF INNINGS<br>{self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b). {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})<br><a target='_blank' href='scoresheet{len(self.test.teaminnings)}.txt'>See Full Scorecard</a><br><br><br><br></td></tr><tr><td colspan='11'></td></tr>"
 			alt_commentary(ALTCOMM_end_of_innings, self.batsmen[0].name, self.batsmen[1].name)
 
 
@@ -1091,6 +1092,7 @@ class teaminnings:
 			
 			if a.balls > 0:
 				self.test.score (a.scorecard)
+				self.test.newscore(a.scorecard)
 
 		if sum(self.extras) > 0:
 			a = ''
@@ -1102,8 +1104,10 @@ class teaminnings:
 
 			a = a[:-2]
 			self.test.score('{} - extras {}'.format(a, str(sum(self.extras)).rjust(3)).rjust(76))
+			self.test.newscore('{} - extras {}'.format(a, str(sum(self.extras)).rjust(3)).rjust(76))
 		else:
 			self.test.score('extras 0'.rjust(76))
+			self.test.newscore('extras 0'.rjust(76))
 
 		if self.overs + self.balls > 0: z = "%.2f" % (self.runs/(self.overs + self.balls/6))
 		else: z = ''
@@ -1116,10 +1120,12 @@ class teaminnings:
 			y = '({} wickets - {} overs) {}   ({} RPO)'.format(self.wickets, oversballs (self), self.runs, z)
 
 		self.test.score (y.rjust(89))
+		self.test.newscore (y.rjust(89))
 
 		b = [x.name for x in self.innings if x.balls == 0]
 
 		self.test.score( '{}{}{}{}{}'.format(''.ljust(21),'O'.center(6), 'M'.center(7), 'R'.center(5), 'W'.center(5)))
+		self.test.newscore( '{}{}{}{}{}'.format(''.ljust(21),'O'.center(6), 'M'.center(7), 'R'.center(5), 'W'.center(5)))
 		for i in self.order:
 			i.stats()
 			if i.overs == 0 and i.balls == 0:
@@ -1136,6 +1142,8 @@ class teaminnings:
 			else:
 				y = ' {} {} - {} - {} - {}   {} RPO {}'.format(i.name.ljust(20), oversballs(i).center(4), str(i.maidens).rjust(2), str(i.runs).rjust(3), str(i.wickets).rjust(2), str(e), i.player.tag.center(15))
 			self.test.score (y)		
+			self.test.newscore (y)	
+
 		
 		self.test.decorator()
 		self.test.blank()
@@ -1377,6 +1385,7 @@ class test:
 	def __init__(self):
 		self.raw = []
 		self.card = []
+		self.newcard = []
 		self.log = []
 		self.inns, self.bowls = [], []
 		self.teaminnings = []
@@ -1634,7 +1643,7 @@ class test:
 
 	def decorator (self):
 		with open (self.scorecard, 'a') as f:
-			f.write('————————————————————————————————————————————————————————————————————————————————————————————-')
+			f.write('-')
 		self.card.append('')	
 
 
@@ -1644,9 +1653,20 @@ class test:
 			f.write(x)
 			f.write(end)
 
+	def newcardkeep (self, x, end = '\n'):
+		inn_no = len(self.teaminnings)
+		scoresheet_no = f"{self.folder}/scoresheet{inn_no}.txt"
+		with open (scoresheet_no, 'a') as f:
+			f.write(x)
+			f.write(end)		
+
 	def score (self, x, end = '\n'):
 		self.card.append(x)
 		self.cardkeep(x, end)
+
+	def newscore (self, x, end = '\n'):
+		self.newcard.append(x)
+		self.newcardkeep(x, end)	
 
 	def cardsave (self):
 		try:
@@ -1690,6 +1710,9 @@ class test:
 			with open('scorecard.txt','w') as f:
 				for i in c: f.write(str(i))
 			shutil.copy('scorecard.txt','{}/scorecard{}.txt'.format(self.folder, self.no))
+			
+			
+
 		finally:
 			f.close()
 
@@ -1708,7 +1731,7 @@ class test:
 		new_content = commentary_header + old_content
 		f.write(new_content)
 		f.close()
-
+			
 
 		### Alternate Ball by Ball Commentary####
 		ALTCOMM_commentary_header = "<html><p align='center'><table width='80%' style = 'font-family: courier new, monaco, courier,arial;'><tr><td colspan='11'>{} v. {} at {} <br><br>{}: {}<br>{}: {}<br><br>{} has won the toss, and {}<br><br>--Day 1, 1st Session--<br>{} - 1st Inning</td></tr>".format(self.raw[1],self.raw[2],self.raw[3], self.home.name, showteam(self.home), self.away.name, showteam(self.away), self.tosswin.gamecapt.name, toss_decision, y.team.name)
@@ -1719,6 +1742,8 @@ class test:
 		ALTCOMM_new_content = ALTCOMM_commentary_header + ALTCOMM_old_content
 		f.write(ALTCOMM_new_content)
 		f.close()
+		
+
 
 
 		######################################

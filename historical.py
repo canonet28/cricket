@@ -98,6 +98,7 @@ def series (home, away, homeplayers, awayplayers):
 		g.no = i+1
 		s.games.append(g)
 
+
 	s.home = g.home
 	s.away = g.away
 
