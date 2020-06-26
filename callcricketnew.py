@@ -15,6 +15,14 @@ def commentary(comment):
 #  2. Could attempt further details in commentary lines, But that could be an overkill
 #  3. Match viewer and visualizations based on output.
 
+################# Match Viewer Attempt ###################
+matchviewer_file = "scorecards/matchviewer.txt"
+open(matchviewer_file, "w")
+
+def matchviewer(comment):
+	with open (matchviewer_file, 'a') as f:
+		f.write(comment)
+
 
 
 ######################## Alternate Ball by Ball Commentary ##################################
@@ -180,6 +188,7 @@ class teaminnings:
 		self.lastindex = ''      
 		self.default_alt_commentary = '' 
 		self.default_alt_commentary_header = ''
+		self.default_alt_commentary_batsmen = ''
 		self.dismissed_batsmen = []
 		self.dismissed_batsmen_names = []
 		self.dismissed_batsmen_index = []
@@ -188,7 +197,8 @@ class teaminnings:
 		self.batsmen1_innings_runs = ''
 		self.batsmen0_innings_balls = ''
 		self.batsmen1_innings_balls = ''
-			
+		self.innings_number = ''
+		self.old_innings = ''
 
 
 	def inningsheader (self):
@@ -304,6 +314,13 @@ class teaminnings:
 							##### Alternate Ball by Ball Commentary: ADDITION OF CHANGE OF BOWLER PROMPT ######
 							#ALTCOMM_bowlingchange = f"<tr><td colspan='11'>&emsp;Bowling Change: {a.name} ({a.bowling.wickets}/{a.bowling.runs}) replaced by {c[0].name} ({c[0].bowling.wickets}/{c[0].bowling.runs})</td></tr>"
 							#alt_commentary(ALTCOMM_bowlingchange, self.batsmen[0].name, self.batsmen[1].name)
+
+							#### MATCH VIEWER #####
+							javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+							javascript_array_content = f'BOWLING CHANGE, BOWLING CHANGE: {a.name} ({a.bowling.wickets}/{a.bowling.runs}) replaced by {c[0].name} ({c[0].bowling.wickets}/{c[0].bowling.runs})'
+							javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3
+							self.test.array_counter += 1
+							matchviewer(javascript_array)
 
 
 			else: 
@@ -458,7 +475,7 @@ class teaminnings:
 
 		if self.partnership(0) >= 0:
 			if self.wickets != 10: 
-				x = ' - new batsman {}'.format(self.team.xi[self.wickets+1].name)
+				x = ' - New batsman {}'.format(self.team.xi[self.wickets+1].name)
 				self.ALTCOMM_newbatsman = 'New batsman is {}'.format(self.team.xi[self.wickets+1].name)  ######### Alternate Ball by Ball Commentary ######
 			else: 
 				x = ''
@@ -467,6 +484,9 @@ class teaminnings:
 			
 			##### Ball by Ball Commentary ######
 			self.COMM_wicket = 'OUT - {} {} ({}b) {}x4 {}x6 - partnership {} {}'.format(self.onstrike.innings.dismissal, self.onstrike.innings.runs, self.onstrike.innings.balls, self.onstrike.innings.fours, self.onstrike.innings.sixes, self.partnership(0), x)
+
+
+
 		
 		if self.bowler.bowling.wickets >= 5 and 'run out' not in self.onstrike.innings.dismissal:
 			self.test.logger('{} {}'.format(self.bowler.name, self.bowler.bowling.bowlformat()))
@@ -590,7 +610,10 @@ class teaminnings:
 				self.balls -= 1
 				self.partnership(5)
 				self.overlog.append('5pen')
-				return True
+				return True	
+
+
+
 
 	def ball (self):
 		#if match_start: self.first_session()
@@ -646,7 +669,10 @@ class teaminnings:
 			if len(self.overlog) >= 5 and len(self.overlog[-2]) > 3 and self.overlog[-3] == 'W' and len(self.overlog[-4]) > 3 and self.overlog[-5] == 'W': self.test.logger('Hattrick for {}!'.format(self.bowler.name))
 			self.overlog.append(self.onstrike.name)
 			COMM_ball_outcome = self.COMM_wicket  ###### Ball by Ball Commentary ######
-			
+			COMM_ball_outcome_array = COMM_ball_outcome.split("-")
+			if len(COMM_ball_outcome_array) > 3:
+				COMM_ball_outcome = COMM_ball_outcome_array[0] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[1] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[2].title() + ". " + COMM_ball_outcome_array[3]
+
 
 		elif x > 1 - six: 
 			self.runsadd(6)
@@ -679,9 +705,58 @@ class teaminnings:
 			COMM_ball_outcome = COMM_no_ball
 		elif COMM_no_ball == "No ball" and COMM_ball_outcome != "No run":
 			COMM_ball_outcome = "No ball plus " + COMM_ball_outcome
-		COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {COMM_ball_outcome}\n"
-		commentary(COMM_ball_by_ball)
+		COMM_ball_by_ball = f"{str(self.overs)}.{str(self.balls)} {b.name} to {a.name}: {COMM_ball_outcome}\n"		
 
+		
+
+		#### MATCH VIEWER #####
+		check_time = str(self.test.time())
+		check_time = check_time.replace(":","")
+
+		if int(check_time) <= 1300:
+			self.test_session = "1st Session"
+		elif int(check_time) > 1300 and int(check_time) < 1600:
+			self.test_session = "2nd Session"
+		elif int(check_time) > 1600:
+			self.test_session = "3rd Session"
+		else:
+			self.test_session = "1st Session"
+
+
+
+		if len(self.test.teaminnings) == 1:
+			self.innings_number = '1st Inning'
+			self.old_innings = ""
+		elif len(self.test.teaminnings) == 2:
+			self.innings_number = '1st Inning'
+			self.old_innings = f"{self.test.teaminnings[0].team.name},{self.test.teaminnings[0].runs},{self.test.teaminnings[0].wickets}"
+		elif len(self.test.teaminnings) == 3:
+			self.innings_number = '2nd Inning'			
+			self.old_innings = f"{self.test.teaminnings[0].team.name},{self.test.teaminnings[0].runs},{self.test.teaminnings[0].wickets},{self.test.teaminnings[1].team.name},{self.test.teaminnings[1].runs},{self.test.teaminnings[1].wickets}"
+		elif len(self.test.teaminnings) == 4:
+			self.innings_number = '2nd Inning'			
+			self.old_innings = f"{self.test.teaminnings[0].team.name},{self.test.teaminnings[0].runs},{self.test.teaminnings[0].wickets},{self.test.teaminnings[1].team.name},{self.test.teaminnings[1].runs},{self.test.teaminnings[1].wickets},{self.test.teaminnings[2].team.name},{self.test.teaminnings[2].runs},{self.test.teaminnings[2].wickets}"
+
+
+
+		## ARRAY [ 0 - Day, 1 - Session, 2 - Innings, 3 - Time, 4 - Overs, 5 - Batting Team, 6 - Bowling Team, 7 - Bowler 1 Name, 8 - Bowler 1 Overs, 9 - Bowler 1 runs, 10 - Bowler 1 Wickets, 11 - Bowler 2 Name, 12 - Bowler 2 Overs, 13 - Bowler 2 runs, 14 - Bowler 2 Wickets, 15 - Batsman 1 Name, 16 - Batsman 1 Runs, 17 - Batsman 1 Balls, 18 - Batsman 1 Fours, 19 - Batsman 1 Sixes, 20 - Batsman 2 Name, 21 - Batsman 2 Runs, 22 - Batsman 2 Balls, 23 - Batsman 2 Fours, 24 - Batsman 2 Sixes, 25 - Total Team Runs, 26 - Total Team Wickets, 27 - Current Partnership, 28 - State of Play, 29 - EVENT, 30 - Batting Team Roster, 31 - Bowling Team Roster, 32 - Lead/Trail, 33 - 41 Previous three innings of Match as Team Name Team Total and Team Wickets]
+
+		javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+
+		self.javascript_array_part2 = f'{self.day()},{self.test_session},{self.innings_number},{str(self.test.time())},{str(self.overs)}.{str(self.balls)},{self.team.name},{self.bowlteam.name},{self.bowler.name},{self.bowler.bowling.overs}.{self.bowler.bowling.balls},{self.bowler.bowling.runs},{self.bowler.bowling.wickets},{self.otherbowler.name},{self.otherbowler.bowling.overs}.{self.otherbowler.bowling.balls},{self.otherbowler.bowling.runs},{self.otherbowler.bowling.wickets},{self.batsmen[0].name},{self.batsmen[0].innings.runs},{self.batsmen[0].innings.balls},{self.batsmen[0].innings.fours},{self.batsmen[0].innings.sixes},{self.batsmen[1].name},{self.batsmen[1].innings.runs},{self.batsmen[1].innings.balls},{self.batsmen[1].innings.fours},{self.batsmen[1].innings.sixes},{str(self.runs)},{str(self.wickets)},{self.partnership(0)},'
+
+
+		javascript_array_content = f'PLAY,{b.name} to {a.name}: <b>{COMM_ball_outcome}</b>'
+
+
+		self.javascript_array_part3 = f',<b>{self.team.name.upper()}</b><br><table width=\'100%\'><tr><td width=\'60%\'><b>Batsmen</b></td><td width=\'10%\'><b>R</b></td><td width=\'10%\'><b>B</b></td><td width=\'10%\'><b>4s</b></td><td width=\'10%\'><b>6s</b></td></tr><tr><td>{self.team.xi[0].name}</td><td>{self.team.xi[0].innings.runs}</td><td>{self.team.xi[0].innings.balls}</td><td>{self.team.xi[0].innings.fours}</td><td>{self.team.xi[0].innings.sixes}</td></tr><tr><td>{self.team.xi[1].name}</td><td>{self.team.xi[1].innings.runs}</td><td>{self.team.xi[1].innings.balls}</td><td>{self.team.xi[1].innings.fours}</td><td>{self.team.xi[1].innings.sixes}</td></tr><tr><td>{self.team.xi[2].name}</td><td>{self.team.xi[2].innings.runs}</td><td>{self.team.xi[2].innings.balls}</td><td>{self.team.xi[2].innings.fours}</td><td>{self.team.xi[2].innings.sixes}</td></tr><tr><td>{self.team.xi[3].name}</td><td>{self.team.xi[3].innings.runs}</td><td>{self.team.xi[3].innings.balls}</td><td>{self.team.xi[3].innings.fours}</td><td>{self.team.xi[3].innings.sixes}</td></tr><tr><td>{self.team.xi[4].name}</td><td>{self.team.xi[4].innings.runs}</td><td>{self.team.xi[4].innings.balls}</td><td>{self.team.xi[4].innings.fours}</td><td>{self.team.xi[4].innings.sixes}</td></tr><tr><td>{self.team.xi[5].name}</td><td>{self.team.xi[5].innings.runs}</td><td>{self.team.xi[5].innings.balls}</td><td>{self.team.xi[5].innings.fours}</td><td>{self.team.xi[5].innings.sixes}</td></tr><tr><td>{self.team.xi[6].name}</td><td>{self.team.xi[6].innings.runs}</td><td>{self.team.xi[6].innings.balls}</td><td>{self.team.xi[6].innings.fours}</td><td>{self.team.xi[6].innings.sixes}</td></tr><tr><td>{self.team.xi[7].name}</td><td>{self.team.xi[7].innings.runs}</td><td>{self.team.xi[7].innings.balls}</td><td>{self.team.xi[7].innings.fours}</td><td>{self.team.xi[7].innings.sixes}</td></tr><tr><td>{self.team.xi[8].name}</td><td>{self.team.xi[8].innings.runs}</td><td>{self.team.xi[8].innings.balls}</td><td>{self.team.xi[8].innings.fours}</td><td>{self.team.xi[8].innings.sixes}</td></tr><tr><td>{self.team.xi[9].name}</td><td>{self.team.xi[9].innings.runs}</td><td>{self.team.xi[9].innings.balls}</td><td>{self.team.xi[9].innings.fours}</td><td>{self.team.xi[9].innings.sixes}</td></tr><tr><td>{self.team.xi[10].name}</td><td>{self.team.xi[10].innings.runs}</td><td>{self.team.xi[10].innings.balls}</td><td>{self.team.xi[10].innings.fours}</td><td>{self.team.xi[10].innings.sixes}</td></tr></table>,<b>{self.bowlteam.name.upper()}</b><br><table width=\'100%\'><tr><td width=\'60%\'><b>Bowlers</b></td><td width=\'10%\'><b>O</b></td><td width=\'10%\'><b>M</b></td><td width=\'10%\'><b>R</b></td><td width=\'10%\'><b>W</b></td></tr><tr><td>{self.bowlteam.xi[0].name}</td><td>{self.bowlteam.xi[0].bowling.overs}.{self.bowlteam.xi[0].bowling.balls}</td><td>{self.bowlteam.xi[0].bowling.maidens}</td><td>{self.bowlteam.xi[0].bowling.runs}</td><td>{self.bowlteam.xi[0].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[1].name}</td><td>{self.bowlteam.xi[1].bowling.overs}.{self.bowlteam.xi[1].bowling.balls}</td><td>{self.bowlteam.xi[1].bowling.maidens}</td><td>{self.bowlteam.xi[1].bowling.runs}</td><td>{self.bowlteam.xi[1].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[2].name}</td><td>{self.bowlteam.xi[2].bowling.overs}.{self.bowlteam.xi[2].bowling.balls}</td><td>{self.bowlteam.xi[2].bowling.maidens}</td><td>{self.bowlteam.xi[2].bowling.runs}</td><td>{self.bowlteam.xi[2].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[3].name}</td><td>{self.bowlteam.xi[3].bowling.overs}.{self.bowlteam.xi[3].bowling.balls}</td><td>{self.bowlteam.xi[3].bowling.maidens}</td><td>{self.bowlteam.xi[3].bowling.runs}</td><td>{self.bowlteam.xi[3].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[4].name}</td><td>{self.bowlteam.xi[4].bowling.overs}.{self.bowlteam.xi[4].bowling.balls}</td><td>{self.bowlteam.xi[4].bowling.maidens}</td><td>{self.bowlteam.xi[4].bowling.runs}</td><td>{self.bowlteam.xi[4].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[5].name}</td><td>{self.bowlteam.xi[5].bowling.overs}.{self.bowlteam.xi[5].bowling.balls}</td><td>{self.bowlteam.xi[5].bowling.maidens}</td><td>{self.bowlteam.xi[5].bowling.runs}</td><td>{self.bowlteam.xi[5].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[6].name}</td><td>{self.bowlteam.xi[6].bowling.overs}.{self.bowlteam.xi[6].bowling.balls}</td><td>{self.bowlteam.xi[6].bowling.maidens}</td><td>{self.bowlteam.xi[6].bowling.runs}</td><td>{self.bowlteam.xi[6].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[7].name}</td><td>{self.bowlteam.xi[7].bowling.overs}.{self.bowlteam.xi[7].bowling.balls}</td><td>{self.bowlteam.xi[7].bowling.maidens}</td><td>{self.bowlteam.xi[7].bowling.runs}</td><td>{self.bowlteam.xi[7].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[8].name}</td><td>{self.bowlteam.xi[8].bowling.overs}.{self.bowlteam.xi[8].bowling.balls}</td><td>{self.bowlteam.xi[8].bowling.maidens}</td><td>{self.bowlteam.xi[8].bowling.runs}</td><td>{self.bowlteam.xi[8].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[9].name}</td><td>{self.bowlteam.xi[9].bowling.overs}.{self.bowlteam.xi[9].bowling.balls}</td><td>{self.bowlteam.xi[9].bowling.maidens}</td><td>{self.bowlteam.xi[9].bowling.runs}</td><td>{self.bowlteam.xi[9].bowling.wickets}</td></tr><tr><td>{self.bowlteam.xi[10].name}</td><td>{self.bowlteam.xi[10].bowling.overs}.{self.bowlteam.xi[10].bowling.balls}</td><td>{self.bowlteam.xi[10].bowling.maidens}</td><td>{self.bowlteam.xi[10].bowling.runs}</td><td>{self.bowlteam.xi[10].bowling.wickets}</td></tr></table>,{self.test.teaminnings[-1].lead()},{self.old_innings}"\n'
+
+		javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3
+
+
+		self.test.array_counter += 1
+		commentary(COMM_ball_by_ball)
+		matchviewer(javascript_array)
 
 
 
@@ -689,6 +764,7 @@ class teaminnings:
 	def over (self):
 		COMM_day_break = ''
 		ALTCOMM_day_break = ''
+		VIEWER_day_break = ''
 		self.incomplete_lastover = ''
 
 		if self.test.overcount() % 90 == 0 and self.test.odi == False:
@@ -748,9 +824,11 @@ class teaminnings:
 			if self.test.overcount() % 90 == 30: 
 				COMM_day_break = '...LUNCH on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 2nd Session--\n\n'	
 				ALTCOMM_day_break = '<tr><td colspan = "11"><br>LUNCH on Day ' + str(self.day()) +'<br><br>--Day ' + str(self.day()) + ', 2nd Session--</td></tr>'+ self.default_alt_commentary_header  ###### Alternate Ball by Ball Commentary #####
+				VIEWER_day_break = 'LUNCH on Day ' + str(self.day()) + '<br><br>'
 			if self.test.overcount() % 90 == 60: 
+				COMM_day_break = '...TEA on Day ' + str(self.day()) +'\n\n\n--Day ' + str(self.day()) + ', 3rd Session--\n\n'	
 				ALTCOMM_day_break = '<tr><td colspan = "11"><br>TEA on Day ' + str(self.day()) +'<br><br>--Day ' + str(self.day()) + ', 3rd Session--</td></tr>' + self.default_alt_commentary_header	###### Alternate Ball by Ball Commentary #####
-			
+				VIEWER_day_break = 'TEA on Day ' + str(self.day()) + '<br><br>'
 			COMM_runs_in_over = self.runs - x 
 			COMM_wickets_in_over = self.overlog.count("W")
 			COMM_end_of_over = f"\n...{str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over. {self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})\n...Score: {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}. {self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b), {self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b). Partnership {self.partnership(0)}.\n\n{COMM_day_break}"
@@ -759,8 +837,12 @@ class teaminnings:
 			##########################################
 
 
-
-
+			#### MATCH VIEWER #####
+			javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+			javascript_array_content = f'END OF OVER,{VIEWER_day_break}END OF OVER - {str(COMM_runs_in_over)} runs and {COMM_wickets_in_over} wickets in that over'
+			javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3
+			self.test.array_counter += 1
+			matchviewer(javascript_array)
 
 
 			################################## Alternate Ball by Ball Commentary : START OF CORE SCRIPTS ##################################
@@ -926,6 +1008,14 @@ class teaminnings:
 				#######################################
 
 
+				#### MATCH VIEWER #####
+				javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+				javascript_array_content = f'END OF DAY,END OF DAY {y-1} <br> {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}<br>{self.batsmen[0].name} {self.batsmen[0].innings.runs}* ({self.batsmen[0].innings.balls}b)<br>{self.batsmen[1].name} {self.batsmen[1].innings.runs}* ({self.batsmen[1].innings.balls}b)<br>{self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})<br>{self.otherbowler.name} {self.otherbowler.bowling.wickets}/{self.otherbowler.bowling.runs} ({self.otherbowler.bowling.overs}.{self.otherbowler.bowling.balls})'
+				javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3
+				self.test.array_counter += 1
+				matchviewer(javascript_array)
+
+
 
 				### Alternate Ball by Ball Commentary ####
 
@@ -1029,6 +1119,14 @@ class teaminnings:
 			commentary(COMM_end_of_innings)
 
 			########################################
+
+			#### MATCH VIEWER #####
+			javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+			javascript_array_content = f'END OF INNINGS,END OF INNINGS <br> {self.team.name} {str(self.runs)}/{str(self.wickets)} {COMM_score_in_context}<br>{self.batsmen[0].name} {self.batsmen[0].innings.runs}{q} ({self.batsmen[0].innings.balls}b)<br>{self.batsmen[1].name} {self.batsmen[1].innings.runs}{w} ({self.batsmen[1].innings.balls}b)<br>{self.bowler.name} {self.bowler.bowling.wickets}/{self.bowler.bowling.runs} ({self.bowler.bowling.overs}.{self.bowler.bowling.balls})<br>{self.otherbowler.name} {self.otherbowler.bowling.wickets}/{self.otherbowler.bowling.runs} ({self.otherbowler.bowling.overs}.{self.otherbowler.bowling.balls})'
+			javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3
+			self.test.array_counter += 1
+			matchviewer(javascript_array)
+
 
 
 
@@ -1272,6 +1370,15 @@ class teaminnings:
 		alt_commentary(ALTCOMM_summary, a, b)
 
 
+		#### MATCH VIEWER #####
+		javascript_array_part1 = f'myArray[{self.test.array_counter}] = "'
+		javascript_array_content = f'END OF MATCH,END OF MATCH<br>{ALTCOMM_result.replace(","," &")}<br>{self.test.motm.name} ({self.test.motm.team}) was the Man of the Match for ({listshow(x).replace(",",";")})'
+		last_inning = f',{self.team.name},{self.runs},{self.wickets}"\n'
+		javascript_array = javascript_array_part1 + self.javascript_array_part2 + javascript_array_content + self.javascript_array_part3.replace('"\n',last_inning)
+		self.test.array_counter += 1
+		matchviewer(javascript_array)
+
+
 
 		if self.test.lostovers > 0:
 			self.test.score(' {} overs lost to bad weather.'.format(self.test.lostovers))
@@ -1391,6 +1498,7 @@ class test:
 		self.teaminnings = []
 		self.players = []
 		self.log = []
+		self.array_counter = 1
 
 	def cricket (self):
 		t = datetime.datetime.now()
