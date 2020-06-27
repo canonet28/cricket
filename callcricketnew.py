@@ -1498,7 +1498,8 @@ class test:
 		self.teaminnings = []
 		self.players = []
 		self.log = []
-		self.array_counter = 1
+		self.array_counter = 5
+		self.first_javascript_array = ''
 
 	def cricket (self):
 		t = datetime.datetime.now()
@@ -1636,6 +1637,13 @@ class test:
 		self.decision()
 		if self.choice == True: self.tobat = self.tosswin
 		else: self.tobat = [y for y in [self.home, self.away] if y is not self.tosswin][0]
+
+
+		#### MATCH VIEWER #####
+		pitch_array= 'PITCH REPORT<br> Pace Factor of {}<br> Spin Factor of {}<br> Outfield Speed of {}<br>(The avergae number is 1. The greater the value, the easier it is for the batsmen)'.format("{:0.2f}".format(self.pitch[0]), "{:0.2f}".format(self.pitch[1]),"{:0.2f}".format(self.pitch[2])) 
+		self.first_javascript_array = f'myArray[1] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,{pitch_array},,,,"\n'
+		self.first_javascript_array = self.first_javascript_array + f'myArray[2] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,{pitch_array},,,,"\n'
+
 
 	def overcount (self):
 		return sum([x.overs for x in self.teaminnings]) + sum([x.balls > 0 for x in self.teaminnings if x is not self.teaminnings[-1]]) + self.lostovers
@@ -1854,7 +1862,25 @@ class test:
 
 
 
+		#### MATCH VIEWER #####
+		self.first_javascript_array = self.first_javascript_array + f'myArray[3] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,TOSS<br>{self.tosswin.gamecapt.name} has won the toss and {toss_decision},,,,"\n'
+		self.first_javascript_array = self.first_javascript_array + f'myArray[4] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,TOSS<br>{self.tosswin.gamecapt.name} has won the toss and {toss_decision},,,,"\n'	
+		f = open(matchviewer_file, "r")
+		matchviewer_old_content = f.read()
+		f.close()
+		f = open (matchviewer_file, "w")
+		matchviewer_new_content = self.first_javascript_array + matchviewer_old_content
+		f.write(matchviewer_new_content)
+		f.close()
+
+
+
 		######################################
+
+
+		
+
+
 
 
 	def gamedesc (self):
