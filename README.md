@@ -1,5 +1,15 @@
 Test match cricket simulator
 
+**********************************************************************************************************
+This forked out branch gives other additional output files besides the standard Scorecard and stats file: 
+  1. Ball-by-ball commentary text file 
+  2. Ball-by-ball detail in scoresheet layout 
+  3. Ball-by-ball running commentary as a javascipt/HTML powered webpage
+
+Limitation of this forked out branch: Need to run one match at a time
+**********************************************************************************************************
+  
+
 How to run: Download all the files, and then direct your command line to the folder where the files were downloaded. You may need to download python from https://www.python.org/ first, in order to make it work.
 
 There are several different programs inside the folder. To run them, you will need to enter the name of the file in the command line (eg. historical.py), or possibly 'python3' and then the name of the file (eg. python3 historical.py) depending on your operating system.
