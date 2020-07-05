@@ -1380,6 +1380,8 @@ class teaminnings:
 
 
 
+
+
 		if self.test.lostovers > 0:
 			self.test.score(' {} overs lost to bad weather.'.format(self.test.lostovers))
 		self.test.score(self.test.pitchdetails())
@@ -1640,7 +1642,7 @@ class test:
 
 
 		#### MATCH VIEWER #####
-		pitch_array= 'PITCH REPORT<br> Pace Factor of {}<br> Spin Factor of {}<br> Outfield Speed of {}<br>(The avergae number is 1. The greater the value, the easier it is for the batsmen)'.format("{:0.2f}".format(self.pitch[0]), "{:0.2f}".format(self.pitch[1]),"{:0.2f}".format(self.pitch[2])) 
+		pitch_array= 'PITCH REPORT<br> Pace Factor of {}<br> Spin Factor of {}<br> Outfield Speed of {}<br>(The avergae number is 1. The greater the value; the easier it is for batting)'.format("{:0.2f}".format(self.pitch[0]), "{:0.2f}".format(self.pitch[1]),"{:0.2f}".format(self.pitch[2])) 
 		self.first_javascript_array = f'myArray[1] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,{pitch_array},,,,"\n'
 		self.first_javascript_array = self.first_javascript_array + f'myArray[2] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,BEGIN MATCH,{pitch_array},,,,"\n'
 
@@ -1875,10 +1877,40 @@ class test:
 
 
 
-		######################################
 
+		### ADDITION 7/5: Create Standalone Viewer File Directly From Python ###
+		f = open("match_viewer_part1.txt", "r")
+		matchviewer_part1 = f.read()
+		f.close()
 
 		
+		matchviewer_part2 = f'<body><script>\n var strCommentary = "";\n	var strHomeEvents = "";\n 	var myArray = new Array();\n	var home = "{self.home.name}";\n    var homeabb = home.substr(0, 3);\n    var away = "{self.away.name}";\n    var awayabb = away.substr(0, 3);\n'
+
+		f = open(matchviewer_file, "r")
+		matchviewer_part3 = f.read()
+		f.close()
+
+		os.remove(matchviewer_file)
+
+		f = open("match_viewer_part4.txt", "r")
+		matchviewer_part4 = f.read()
+		f.close()
+
+		
+		matchviewer_part5 = f'document.getElementById("HomeAbb").innerHTML= "<img src=\'../assets/{self.home.name}.png\' height=\'88\'>";\n			document.getElementById("HomeTeamName").innerHTML= home;\n			document.getElementById("Batsman1_name").innerHTML= "<center>" + word[15] + "</center>";\n			document.getElementById("Batsman1_Score").innerHTML= word[16];\n			document.getElementById("AwayAbb").innerHTML= "<img src=\'../assets/{self.away.name}.png\' height=\'88\'>";\n			document.getElementById("AwayTeamName").innerHTML= away;\n'
+
+
+		f = open("match_viewer_part6.txt", "r")
+		matchviewer_part6 = f.read()
+		f.close()
+
+
+		f = open ("scorecards/matchviewer.html", "w")
+		matchviewer_html = matchviewer_part1 + matchviewer_part2 + matchviewer_part3 + matchviewer_part4 + matchviewer_part5 + matchviewer_part6
+		f.write(matchviewer_html)
+		f.close()
+		
+		######################################
 
 
 

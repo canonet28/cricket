@@ -1,0 +1,48 @@
+function test()
+{
+	return true;
+}
+
+
+var c=0;
+var t;
+var currtime = 0;
+function pauseGame()
+{
+  if (c==1)
+  {
+    t=setTimeout("myFunx("+(currtime+1)+")", 2000);
+    c=0;
+    document.getElementById("pauseButton").value="Pause";
+  }
+  else
+  {
+    clearTimeout(t);
+    c=1;
+    document.getElementById("pauseButton").value="Restart";
+  }
+}
+
+
+
+function myFunx(index) {
+
+    if(!index || index > myArray.length) {
+        index = 0;
+    }
+            currtime=index;
+            if ((index < myArray.length ) )
+		{
+			t=setTimeout("myFunx("+(index+1)+")", 2000);
+			var message= myArray[index];
+			var word=message.split(",");
+
+			document.getElementById("Score").innerHTML=  word[25] + "-" + word[26]; 
+			
+
+			document.getElementById("TeamsHeader").innerHTML=  word[5] + " - " + word[2];
+
+
+
+
+

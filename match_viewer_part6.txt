@@ -1,0 +1,252 @@
+
+			document.getElementById("Batsman2_name").innerHTML= "<center>" + word[20] + "</center>";
+			document.getElementById("Batsman2_Score").innerHTML= word[21];			
+
+			document.getElementById("HomeEvents").innerHTML= "";			
+			document.getElementById("AwayEvents").innerHTML= "";
+			
+			if ( word[28] != "BEGIN MATCH" ) {
+												document.getElementById("Batsman1_details").innerHTML= "<center>" + word[17] + "b, " + word[18] + " x 4, " + word[19] + " x 6</center>";			
+												document.getElementById("Batsman2_details").innerHTML= "<center>" + word[22] + "b, " + word[23] + " x 4, " + word[24] + " x 6</center>";
+												}
+			
+
+			document.getElementById("BattingTeam").innerHTML= word[30];
+			document.getElementById("BowlingTeam").innerHTML= word[31];		
+
+	
+	
+			if (word[34] == null) 
+				{ 
+					var home_score1 = "";
+					var home_score2 = "";
+					var away_score1 = "";
+					var away_score2 = ""; 
+				}		
+					
+			else if (word[36] == null) 
+				{
+					if (word[33] == home) { home_score1 = word[34];
+											var home_score2 = "";
+											var away_score1 = "";
+											var away_score2 = ""; 
+										 
+										   }
+
+					else if (word[33] == away) { away_score1 = word[34];
+												var home_score1 = "";
+												var home_score2 = "";
+												var away_score2 = ""; 
+
+												}
+				}
+
+			else if (word[39] == null) 
+				{
+					if (word[36] == home) { home_score1 = word[37];
+											var home_score2 = "";
+											away_score1 = word[34];
+											var away_score2 = ""; 
+										 
+										   }
+
+					else if (word[36] == away) { away_score1 = word[37];
+												home_score1 = word[34];
+												var home_score2 = "";
+												var away_score2 = ""; 
+
+												}
+				}
+
+			else 
+				{
+					if (word[39] == home) { home_score2 = word[40];
+											away_score2 = ""; 
+											if (word[36] == home) { home_score1 = word[37];
+																	away_score1 = word[34];
+																}
+											if (word[36] == away) { home_score1 = word[34];
+																	away_score1 = word[37];
+																}										
+										   }
+
+
+					else if (word[39] == away) { away_score2 = word[40];
+												 home_score2 = "";
+												 if (word[36] == home) { home_score1 = word[37];
+																	away_score1 = word[34];
+																}
+												 if (word[36] == away) { home_score1 = word[34];
+																	away_score1 = word[37];
+																}										
+										   		}
+				}			
+
+
+
+
+			if (word[5] == home) { 
+								   if (word[32] >= 0) 
+								   		{
+								   		home_lead = word[32];
+								   		away_lead = "";	
+								   		}
+
+								   	if (word[32] < 0) 
+								   		{
+								   		home_lead = "";
+								   		away_lead = -(word[32]);	
+								   		}		   
+								 }
+			if (word[5] == away) { 
+								   if (word[32] >= 0) 
+								   		{
+								   		away_lead = word[32];
+								   		home_lead = "";	
+								   		}
+
+								   	if (word[32] < 0) 
+								   		{
+								   		away_lead = "";
+								   		home_lead = -(word[32]);	
+								   		}		   
+								 }
+
+		    /*if (word[5] == away) { away_lead = word[32];
+								   home_lead = -(word[32]);
+								 }
+								 
+			*/
+
+
+																
+										
+			if ( word[28] == "END OF OVER" )
+			{
+				strCommentary = word[29] + "<br><br>" + strCommentary;
+				document.getElementById("Commentary").innerHTML= strCommentary;
+				strCommentary = "";
+				
+			}
+
+			else if ( word[28] == "END OF DAY" )
+			{
+				strCommentary = word[29] + "<br><br>Press Play to Continue..<br><br>";
+				document.getElementById("Commentary").innerHTML= strCommentary;
+				strCommentary = "";
+				pauseGame();
+			}
+
+			else if ( word[28] == "END OF INNINGS" )
+			{
+				strCommentary = word[29] + "<br><br>";
+				document.getElementById("Commentary").innerHTML= strCommentary;
+				strCommentary = "";
+			}
+
+			else if ( word[28] == "BOWLING CHANGE" )
+			{
+				strCommentary = word[29] + "<br><br>";
+				document.getElementById("Commentary").innerHTML= strCommentary;
+			}
+
+
+			else if ( word[28] == "END OF MATCH" )
+			{
+				strCommentary = word[29] + "<br><br>";
+				document.getElementById("Commentary").innerHTML= strCommentary;
+				if (word[5] == home) {home_score2 = word[25];}
+				else if (word[5] == away) {away_score2 = word[25];}
+
+			}
+
+			else if ( word[28] == "PLAY" )
+			{
+				strCommentary = word[4] + " " + word[29] + "<br><br>" + strCommentary;
+				document.getElementById("Commentary").innerHTML= strCommentary;
+			}
+
+			else if ( word[28] == "BEGIN MATCH" )
+			{
+				
+				document.getElementById("Commentary").innerHTML= word[29];
+			}
+
+
+
+			document.getElementById("Summary").innerHTML= "<table width=\'100%\' valign=\'top\'>" +
+							"<tr><td colspan=\'3\' align=\'center\'><b>Day " + word[0] + ", " + word[1] + ", " + word[3] + "</td></tr>" +
+							"<tr><td align=\'right\'>" + homeabb.toUpperCase() + "&nbsp;&nbsp;" + "</td><td align=\'center\'><b> Teams </b></td><td align=\'left\'>"  + "&nbsp;&nbsp;" + awayabb.toUpperCase() + "</td></tr>" +
+							"<tr><td align=\'right\'>" + home_score1 + "&nbsp;&nbsp;" + "</td><td align=\'center\'><b> 1st Inn </b></td><td align=\'left\'>"  + "&nbsp;&nbsp;" + away_score1 + "</td></tr>" +
+							"<tr><td align=\'right\'>" + home_score2 + "&nbsp;&nbsp;" + "</td><td align=\'center\'><b> 2nd Inn </b></td><td align=\'left\'>"  + "&nbsp;&nbsp;" + away_score2 + "</td></tr>" +
+							"<tr><td align=\'right\'>" + home_lead + "&nbsp;&nbsp;" + "</td><td align=\'center\'><b> LEAD </b></td><td align=\'left\'>"  + "&nbsp;&nbsp;" + away_lead + "</td></tr>" +
+							"</table>";	
+
+
+			if (word[27] > 0)
+					{
+					document.getElementById("Partnership").innerHTML= "<center>PARTNERSHIP<br><table width=\'" + word[27]/2 + "%\'><tr><td bgcolor=\'#006600\' align=\'center\'><font size=\'0.5\' color=\'#FFFFFF\'>" + word[27] + "</font></td></tr></table></center>";
+					}		
+			else if (word[27] == 0)	
+					{
+					document.getElementById("Partnership").innerHTML= "<center>PARTNERSHIP</center>";
+					}		
+
+			
+
+		}
+		else
+		{
+			test();
+		}
+}
+
+
+
+myFunx();
+</script>
+
+<div id="banner">
+		
+		<div id="TeamsHeader"></div> 
+		<div id="Score"></div>
+		<form id="Pause">
+			<input type="button" name="pauseButton" value="Pause/Play" onClick="pauseGame()">
+		</form>	
+		<div id="Partnership"></div>
+		<div id="HomeTeamBorder">	 
+			<div id="HomeAbb"></div>
+			<div id="HomeTeamName"></div>
+		</div>
+		<div id="HomeEvents"></div>		
+		<div id="Batsman1_Score"></div>	
+		<div id="Batsman1_details"></div>
+		<div id="Batsman1_name"></div>			
+	
+		
+								
+		<div id="Summary"></div>
+
+
+		<div id="AwayTeamBorder">	 
+			<div id="AwayAbb"></div>
+			<div id="AwayTeamName"></div>
+		</div>
+		<div id="AwayEvents"></div>				
+		<div id="Batsman2_Score"></div> 
+		<div id="Batsman2_details"></div>
+		<div id="Batsman2_name"></div>	  	
+		
+</div>
+
+
+	<div>	
+	   <span id="BattingTeam"></span>   
+ 	   <span id="CommentaryLabel"><b>COMMENTARY</b></span> 
+	   <span id="Commentary"></span> 
+	   <span id="BowlingTeam"></span> 
+
+    </div>
+
+</body>
+</html>
