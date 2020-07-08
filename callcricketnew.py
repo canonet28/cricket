@@ -1919,7 +1919,7 @@ class test:
 		f.close()
 
 
-		f = open ("scorecards/matchviewer.html", "w")
+		f = open ("scorecards/MatchViewer.html", "w")
 		matchviewer_html = matchviewer_part1 + matchviewer_part2 + matchviewer_part3 + matchviewer_part4 + matchviewer_part5 + matchviewer_part6
 		f.write(matchviewer_html)
 		f.close()
