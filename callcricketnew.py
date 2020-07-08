@@ -671,7 +671,7 @@ class teaminnings:
 			COMM_ball_outcome = self.COMM_wicket  ###### Ball by Ball Commentary ######
 			COMM_ball_outcome_array = COMM_ball_outcome.split("-")
 			if len(COMM_ball_outcome_array) > 3:
-				COMM_ball_outcome = COMM_ball_outcome_array[0] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[1] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[2].title() + ". " + COMM_ball_outcome_array[3]
+				COMM_ball_outcome = COMM_ball_outcome_array[0] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[1] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[2].title() + ".<br><br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[3]
 
 
 		elif x > 1 - six: 
@@ -1897,7 +1897,21 @@ class test:
 		f.close()
 
 		
-		matchviewer_part5 = f'document.getElementById("HomeAbb").innerHTML= "<img src=\'../assets/{self.home.name}.png\' height=\'88\'>";\n			document.getElementById("HomeTeamName").innerHTML= home;\n			document.getElementById("Batsman1_name").innerHTML= "<center>" + word[15] + "</center>";\n			document.getElementById("Batsman1_Score").innerHTML= word[16];\n			document.getElementById("AwayAbb").innerHTML= "<img src=\'../assets/{self.away.name}.png\' height=\'88\'>";\n			document.getElementById("AwayTeamName").innerHTML= away;\n'
+		if self.home.name in ["West Indies", "England", "Australia", "India", "Pakistan", "Sri Lanka", "Bangladesh", "South Africa", "New Zealand", "Afghanistan", "Ireland", "Zimbabwe"]:
+			home_logo = f"{self.home.name}.png"
+			home_logo_title = f"Logo is the property of the cricket board in {self.home.name}"
+		else:
+			home_logo = f"home.png"
+			home_logo_title = f"Free clipart"
+
+		if self.away.name in ["West Indies", "England", "Australia", "India", "Pakistan", "Sri Lanka", "Bangladesh", "South Africa", "New Zealand", "Afghanistan", "Ireland", "Zimbabwe"]:
+			away_logo = f"{self.away.name}.png"
+			away_logo_title = f"Logo is the property of the cricket board in {self.away.name}"
+		else:
+			away_logo = f"away.png" 
+			away_logo_title = f"cricket bowler by ProSymbols from the Noun Project"	
+			
+		matchviewer_part5 = f'document.getElementById("HomeAbb").innerHTML= "<img src=\'../assets/{home_logo}\' title=\'{home_logo_title}\' height=\'88\'>";\n			document.getElementById("HomeTeamName").innerHTML= home;\n			document.getElementById("Batsman1_name").innerHTML= "<center>" + word[15] + "</center>";\n			document.getElementById("Batsman1_Score").innerHTML= word[16];\n			document.getElementById("AwayAbb").innerHTML= "<img src=\'../assets/{away_logo}\' title=\'{away_logo_title}\' height=\'88\'>";\n			document.getElementById("AwayTeamName").innerHTML= away;\n'
 
 
 		f = open("match_viewer_part6.txt", "r")
