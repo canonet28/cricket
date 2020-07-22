@@ -669,10 +669,7 @@ class teaminnings:
 			if len(self.overlog) >= 5 and len(self.overlog[-2]) > 3 and self.overlog[-3] == 'W' and len(self.overlog[-4]) > 3 and self.overlog[-5] == 'W': self.test.logger('Hattrick for {}!'.format(self.bowler.name))
 			self.overlog.append(self.onstrike.name)
 			COMM_ball_outcome = self.COMM_wicket  ###### Ball by Ball Commentary ######
-			COMM_ball_outcome_array = COMM_ball_outcome.split("-")
-			if len(COMM_ball_outcome_array) > 3:
-				COMM_ball_outcome = COMM_ball_outcome_array[0] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[1] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[2].title() + ".<br><br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[3]
-
+			
 
 		elif x > 1 - six: 
 			self.runsadd(6)
@@ -710,6 +707,11 @@ class teaminnings:
 		
 
 		#### MATCH VIEWER #####
+		COMM_ball_outcome_array = COMM_ball_outcome.split("-")
+		if len(COMM_ball_outcome_array) > 3:
+			COMM_ball_outcome = COMM_ball_outcome_array[0] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[1] + "<br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[2].title() + ".<br><br>&emsp;&emsp;&emsp;&emsp;" + COMM_ball_outcome_array[3]
+
+
 		check_time = str(self.test.time())
 		check_time = check_time.replace(":","")
 
