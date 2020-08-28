@@ -11,7 +11,7 @@ function pauseGame()
 {
   if (c==1)
   {
-    t=setTimeout("myFunx("+(currtime+1)+")", 2000);
+    t=setTimeout("myFunx("+(currtime+1)+")", 3000);
     c=0;
     document.getElementById("pauseButton").value="Pause";
   }
@@ -33,7 +33,7 @@ function myFunx(index) {
             currtime=index;
             if ((index < myArray.length ) )
 		{
-			t=setTimeout("myFunx("+(index+1)+")", 2000);
+			t=setTimeout("myFunx("+(index+1)+")", 3000);
 			var message= myArray[index];
 			var word=message.split(",");
 
