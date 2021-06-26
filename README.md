@@ -1,6 +1,6 @@
 Test match cricket simulator
 
-Live Demo at: http://rusty-league.net/tms/
+Live Demo at: https://tms.rusty-league.net
 
 **********************************************************************************************************
 This forked out branch gives other additional output files besides the standard Scorecard and stats file: 
